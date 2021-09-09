@@ -1,0 +1,59 @@
+diff --git a/reference_design/scripts/Mercury_XU8_ST1_bd.tcl b/reference_design/scripts/Mercury_XU8_ST1_bd.tcl
+index 2e9fc0f..5ba34a3 100644
+--- a/reference_design/scripts/Mercury_XU8_ST1_bd.tcl
++++ b/reference_design/scripts/Mercury_XU8_ST1_bd.tcl
+@@ -69,6 +69,22 @@ set_property -dict [ list \
+   CONFIG.PSU_MIO_12_PULLUPDOWN {disable} \
+   CONFIG.PSU_MIO_23_PULLUPDOWN {disable} \
+ ] [get_bd_cells zynq_ultra_ps_e]
++set_property -dict [ list \
++    CONFIG.PSU__CRF_APB__DP_AUDIO_REF_CTRL__SRCSEL {RPLL} \
++    CONFIG.PSU__CRF_APB__DP_STC_REF_CTRL__SRCSEL {RPLL} \
++    CONFIG.PSU__CRF_APB__GPU_REF_CTRL__SRCSEL {DPLL} \
++    CONFIG.PSU__CRL_APB__IOU_SWITCH_CTRL__SRCSEL {IOPLL} \
++     \
++    CONFIG.PSU__CRL_APB__LPD_SWITCH_CTRL__SRCSEL {IOPLL} \
++    CONFIG.PSU__CRL_APB__ADMA_REF_CTRL__SRCSEL {IOPLL} \
++    CONFIG.PSU__CRL_APB__CPU_R5_CTRL__SRCSEL {IOPLL} \
++    CONFIG.PSU__CRL_APB__PL0_REF_CTRL__SRCSEL {IOPLL} \
++    CONFIG.PSU__CRL_APB__PL1_REF_CTRL__SRCSEL {IOPLL} \
++    CONFIG.PSU__CRL_APB__QSPI_REF_CTRL__SRCSEL {IOPLL} \
++    CONFIG.PSU__CRL_APB__SDIO0_REF_CTRL__SRCSEL {IOPLL} \
++    CONFIG.PSU__CRL_APB__SDIO1_REF_CTRL__SRCSEL {IOPLL} \
++    CONFIG.PSU__CRF_APB__DP_STC_REF_CTRL__SRCSEL {DPLL} \
++] [get_bd_cells zynq_ultra_ps_e]
+ 
+ create_bd_cell -type ip -vlnv xilinx.com:ip:system_management_wiz system_management_wiz
+ set_property -dict [ list \
+@@ -187,6 +203,18 @@ set Clk50 [ create_bd_port -dir O -type clk Clk50]
+ connect_bd_net [get_bd_ports Clk50] [get_bd_pins zynq_ultra_ps_e/pl_clk1]
+ set Rst_N [ create_bd_port -dir O -type rst Rst_N]
+ connect_bd_net [get_bd_ports Rst_N] [get_bd_pins zynq_ultra_ps_e/pl_resetn0]
++
++# PS hierarchy
++group_bd_cells mpsoc_ss \
++  [get_bd_cells smartconnect_0] \
++  [get_bd_cells xlconcat_0] \
++  [get_bd_cells smartconnect_1] \
++  [get_bd_cells ddr4_sys_rst] \
++  [get_bd_cells system_management_wiz] \
++  [get_bd_cells ps_sys_rst] \
++  [get_bd_cells ddr4] \
++  [get_bd_cells zynq_ultra_ps_e]
++
+ assign_bd_address
+ save_bd_design
+ validate_bd_design
+diff --git a/reference_design/scripts/settings.tcl b/reference_design/scripts/settings.tcl
+index f22d5fe..e317306 100644
+--- a/reference_design/scripts/settings.tcl
++++ b/reference_design/scripts/settings.tcl
+@@ -28,7 +28,7 @@
+ 
+ # ----------------------------------------------------------------------------------
+ # Modify this variable to select your module
+-if {![info exists module_name]} {set module_name ME-XU8-4CG-1E-D11E}
++if {![info exists module_name]} {set module_name ME-XU8-7EV-2I-D12E}
+ if {![info exists baseboard]}   {set baseboard ST1}
+ # ----------------------------------------------------------------------------------
+ 

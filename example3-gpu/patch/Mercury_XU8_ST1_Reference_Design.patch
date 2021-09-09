@@ -1,0 +1,13 @@
+diff --git a/reference_design/scripts/settings.tcl b/reference_design/scripts/settings.tcl
+index f22d5fe..e317306 100644
+--- a/reference_design/scripts/settings.tcl
++++ b/reference_design/scripts/settings.tcl
+@@ -28,7 +28,7 @@
+ 
+ # ----------------------------------------------------------------------------------
+ # Modify this variable to select your module
+-if {![info exists module_name]} {set module_name ME-XU8-4CG-1E-D11E}
++if {![info exists module_name]} {set module_name ME-XU8-7EV-2I-D12E}
+ if {![info exists baseboard]}   {set baseboard ST1}
+ # ----------------------------------------------------------------------------------
+ 

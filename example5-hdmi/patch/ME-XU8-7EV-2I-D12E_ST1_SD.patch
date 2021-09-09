@@ -1,0 +1,323 @@
+From 60ee0009133d619e782bc4ddd644fa807cf7ee72 Mon Sep 17 00:00:00 2001
+From: tholzsche <till.holzscheiter@enclustra.com>
+Date: Fri, 2 Jul 2021 11:30:49 +0200
+Subject: [PATCH] Add hdmi support
+
+---
+ .../sd/project-spec/configs/rootfs_config     | 14 ++--
+ .../device-tree/device-tree.bbappend          |  1 +
+ .../device-tree/files/pl-custom.dtsi          | 84 ++++++++++++++++++-
+ .../device-tree/files/system-user.dtsi        |  1 +
+ .../files/zynqmp_enclustra_mercury_st1.dtsi   |  6 +-
+ ...Dont-enable-primary-plane-by-default.patch | 55 ++++++++++++
+ ...r-Supress-vblank-timeout-warning-mes.patch | 30 +++++++
+ .../recipes-kernel/linux/linux-xlnx/user.cfg  |  1 +
+ .../linux/linux-xlnx_%.bbappend               |  6 +-
+ 9 files changed, 186 insertions(+), 12 deletions(-)
+ create mode 100644 petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/0003-drm-xlnx_mixer-Dont-enable-primary-plane-by-default.patch
+ create mode 100644 petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/0004-drm_atomic_helper-Supress-vblank-timeout-warning-mes.patch
+ create mode 100644 petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/user.cfg
+
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
+index 53c736f..ca6d35f 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
+@@ -2556,7 +2556,7 @@ CONFIG_udev-extraconf=y
+ #
+ # hdmi-module
+ #
+-# CONFIG_kernel-module-hdmi is not set
++CONFIG_kernel-module-hdmi=y
+ 
+ #
+ # icu 
+@@ -3695,15 +3695,15 @@ CONFIG_hellopm=y
+ #
+ # libdrm 
+ #
+-# CONFIG_libdrm is not set
+-# CONFIG_libdrm-tests is not set
+-# CONFIG_libdrm-drivers is not set
++CONFIG_libdrm=y
++CONFIG_libdrm-tests=y
++CONFIG_libdrm-drivers=y
+ # CONFIG_libdrm-amdgpu is not set
+ # CONFIG_libdrm-nouveau is not set
+ # CONFIG_libdrm-dev is not set
+ # CONFIG_libdrm-freedreno is not set
+ # CONFIG_libdrm-radeon is not set
+-# CONFIG_libdrm-kms is not set
++CONFIG_libdrm-kms=y
+ # CONFIG_libdrm-dbg is not set
+ # CONFIG_libdrm-omap is not set
+ 
+@@ -4060,7 +4060,7 @@ CONFIG_hellopm=y
+ #
+ # packagegroup-petalinux-gstreamer 
+ #
+-# CONFIG_packagegroup-petalinux-gstreamer is not set
++CONFIG_packagegroup-petalinux-gstreamer=y
+ # CONFIG_packagegroup-petalinux-gstreamer-dev is not set
+ # CONFIG_packagegroup-petalinux-gstreamer-dbg is not set
+ 
+@@ -4159,7 +4159,7 @@ CONFIG_hellopm=y
+ #
+ # packagegroup-petalinux-utils 
+ #
+-# CONFIG_packagegroup-petalinux-utils is not set
++CONFIG_packagegroup-petalinux-utils=y
+ # CONFIG_packagegroup-petalinux-utils-dbg is not set
+ # CONFIG_packagegroup-petalinux-utils-dev is not set
+ 
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/device-tree.bbappend b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/device-tree.bbappend
+index 73e294c..f820f19 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/device-tree.bbappend
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/device-tree.bbappend
+@@ -4,6 +4,7 @@ SRC_URI += "file://system-user.dtsi"
+ SRC_URI += " file://zynqmp_enclustra_common.dtsi"
+ SRC_URI += " file://zynqmp_enclustra_mercury_xu8.dtsi"
+ SRC_URI += " file://zynqmp_enclustra_mercury_st1.dtsi"
++SRC_URI += " file://pl-custom.dtsi"
+ 
+ python () {
+     if d.getVar("CONFIG_DISABLE"):
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/pl-custom.dtsi b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/pl-custom.dtsi
+index 336d7a2..1a4f7cb 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/pl-custom.dtsi
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/pl-custom.dtsi
+@@ -1,2 +1,84 @@
+-/ {
++&hdmi_ss_v_frmbuf_rd_0 {
++	reset-gpios = <&gpio 80 1>;
++};
++
++
++&hdmi_ss_v_mix_0 {
++	reset-gpios = <&gpio 81 1>;
++
++	layer_0 {
++		xlnx,layer-id = <0>;
++		xlnx,vformat = "BG24";
++		xlnx,layer-max-width = <1024>;
++		xlnx,layer-max-height = <768>;
++		dmas = <&hdmi_ss_v_frmbuf_rd_0 0>;
++		dma-names = "dma0";
++		xlnx,layer-streaming;
++		xlnx,layer-primary;
++	};
++
++	layer_1 {
++		xlnx,layer-id = <1>;
++		xlnx,vformat = "NV12";
++	};
++
++	layer_2 {
++		xlnx,layer-id = <2>;
++		xlnx,vformat = "NV12";
++		xlnx,layer-alpha;
++	};
++
++	logo {
++		xlnx,layer-id = <3>;
++		xlnx,logo-height = <64>;
++		xlnx,logo-width = <64>;
++	};
++
++	port@0 {
++		reg = <0>;
++		hdmi_panel: endpoint {
++			remote-endpoint = <&hdmi_encoder>;
++		};
++	};
++};
++
++&amba_pl {
++
++	ref65: ref65M {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <65000000>;
++	};
++
++	ref100PL: ref100MPL {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <100000000>;
++	};
++};
++
++&hdmi_ss_vid_phy_controller_0 {
++	clock-names = "vid_phy_axi4lite_aclk";
++	clocks = <&ref100PL>;
++};
++
++&hdmi_ss_v_hdmi_tx_ss_0 {
++	clock-names = "s_axi_cpu_aclk", "s_axis_video_aclk", "txref-clk", "retimer-clk";
++	clocks = <&ref100PL>, <&ref100PL>, <&ref65>, <&ref65>;
++	compatible = "xlnx,v-hdmi-tx-ss-3.1", "xlnx,v-hdmi-tx-ss-3.1";
++	phy-names = "hdmi-phy0", "hdmi-phy1", "hdmi-phy2";
++	phys = <&vphy_lane0 0 1 1 1>, <&vphy_lane1 0 1 1 1>, <&vphy_lane2 0 1 1 1>;
++	xlnx,input-pixels-per-clock = <0x2>;
++	xlnx,max-bits-per-component = <0x8>;
++
++	ports {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		encoder_hdmi_port: port@0 {
++			reg = <0>;
++			hdmi_encoder: endpoint {
++				remote-endpoint = <&hdmi_panel>;
++			};
++		};
++	};
+ };
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
+index ddf11a6..e234985 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
+@@ -5,3 +5,4 @@
+ #include "zynqmp_enclustra_common.dtsi"
+ #include "zynqmp_enclustra_mercury_st1.dtsi"
+ #include "zynqmp_enclustra_mercury_xu8.dtsi"
++#include "pl-custom.dtsi"
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/zynqmp_enclustra_mercury_st1.dtsi b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/zynqmp_enclustra_mercury_st1.dtsi
+index 6f6785a..d02e6bd 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/zynqmp_enclustra_mercury_st1.dtsi
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/zynqmp_enclustra_mercury_st1.dtsi
+@@ -80,8 +80,8 @@
+ 			silabs,drive-config = "3V3_LVDS";
+ 			silabs,clock-source = <SI5338_OUT_MUX_MSN>;
+ 			silabs,disable-state = <SI5338_OUT_DIS_HIZ>;
+-			clock-frequency = <125000000>;
+-			/* enabled = "okay"; */
++			clock-frequency = <65000000>;
++			enabled = "okay";
+ 		};
+ 		clkout3 {
+ 			reg = <3>;
+@@ -120,4 +120,4 @@
+ 
+ &zynqmp_dp_snd_codec0 {
+     status = "disabled";
+-};
+\ No newline at end of file
++};
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/0003-drm-xlnx_mixer-Dont-enable-primary-plane-by-default.patch b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/0003-drm-xlnx_mixer-Dont-enable-primary-plane-by-default.patch
+new file mode 100644
+index 0000000..1fbcd51
+--- /dev/null
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/0003-drm-xlnx_mixer-Dont-enable-primary-plane-by-default.patch
+@@ -0,0 +1,55 @@
++From 72f64a62f226a22c24dedbfb7bf97dacb6ac5064 Mon Sep 17 00:00:00 2001
++From: Maulik K Patel <maulikkp@xilinx.com>
++Date: Tue, 6 Aug 2019 15:01:59 +0530
++Subject: [PATCH] drm:xlnx_mixer: Dont enable primary plane by default.
++
++Enabling primary by default is causing bandwidth of 2GB.
++This patch is not to enable mixer primary plane by default.
++Enable/Disable it through module_param and devmem by using
++below commands.
++
++Enable:
++echo Y > /sys/module/xlnx_mixer/parameters/mixer_primary_enable
++
++Disable:
++devmem 0xa0070040 32 0x0
++echo N > /sys/module/xlnx_mixer/parameters/mixer_primary_enable
++
++Signed-off-by: Maulik K Patel <maulikkp@xilinx.com>
++---
++ drivers/gpu/drm/xlnx/xlnx_mixer.c | 12 ++++++++++++
++ 1 file changed, 12 insertions(+)
++
++diff --git a/drivers/gpu/drm/xlnx/xlnx_mixer.c b/drivers/gpu/drm/xlnx/xlnx_mixer.c
++index e0d5273..7346101 100644
++--- a/drivers/gpu/drm/xlnx/xlnx_mixer.c
+++++ b/drivers/gpu/drm/xlnx/xlnx_mixer.c
++@@ -125,6 +125,11 @@ static const u32 color_table[] = {
++ 	DRM_FORMAT_XV20,
++ };
++ 
+++static bool xlnx_mixer_primary_enable = false;
+++module_param_named(mixer_primary_enable, xlnx_mixer_primary_enable, bool, 0600);
+++MODULE_PARM_DESC(mixer_primary_enable, "Enable mixer primary plane (default: 0)");
+++
+++
++ /*********************** Inline Functions/Macros *****************************/
++ #define to_mixer_hw(p) (&((p)->mixer->mixer_hw))
++ #define to_xlnx_crtc(x)	container_of(x, struct xlnx_crtc, crtc)
++@@ -572,6 +577,13 @@ static void xlnx_mix_layer_enable(struct xlnx_mix_hw *mixer,
++ {
++ 	struct xlnx_mix_layer_data *layer_data;
++ 	u32 curr_state;
+++	struct xlnx_mix *mix;
+++
+++	mix = container_of(mixer, struct xlnx_mix, mixer_hw);
+++	if (mix->drm_primary_layer->mixer_layer->id == id) {
+++		if (!xlnx_mixer_primary_enable)
+++		return;
+++	}
++ 
++ 	/* Ensure layer is marked as 'active' by application before
++ 	 * turning on in hardware.  In some cases, layer register data
++-- 
++2.7.4
++
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/0004-drm_atomic_helper-Supress-vblank-timeout-warning-mes.patch b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/0004-drm_atomic_helper-Supress-vblank-timeout-warning-mes.patch
+new file mode 100644
+index 0000000..d7d2f36
+--- /dev/null
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/0004-drm_atomic_helper-Supress-vblank-timeout-warning-mes.patch
+@@ -0,0 +1,30 @@
++From 01f138162245d70b863b0376962b9bf86550e45b Mon Sep 17 00:00:00 2001
++From: Anil Kumar M <amamidal@xilinx.com>
++Date: Tue, 29 May 2018 12:02:50 +0530
++Subject: [PATCH] drm_atomic_helper: Supress vblank timeout warning message
++
++Supressing drm timeout warning message from drm atomic framework.
++
++Signed-off-by: Anil Kumar M <amamidal@xilinx.com>
++---
++ drivers/gpu/drm/drm_atomic_helper.c |    4 ++--
++ 1 files changed, 2 insertions(+), 2 deletions(-)
++
++diff --git a/drivers/gpu/drm/drm_atomic_helper.c b/drivers/gpu/drm/drm_atomic_helper.c
++index 0028591..376fa62 100644
++--- a/drivers/gpu/drm/drm_atomic_helper.c
+++++ b/drivers/gpu/drm/drm_atomic_helper.c
++@@ -1236,8 +1236,8 @@ int drm_atomic_helper_wait_for_fences(struct drm_device *dev,
++ 					drm_crtc_vblank_count(crtc),
++ 				msecs_to_jiffies(50));
++ 
++-		WARN(!ret, "[CRTC:%d:%s] vblank wait timed out\n",
++-		     crtc->base.id, crtc->name);
+++//		WARN(!ret, "[CRTC:%d:%s] vblank wait timed out\n",
+++//		     crtc->base.id, crtc->name);
++ 
++ 		drm_crtc_vblank_put(crtc);
++ 	}
++-- 
++1.7.1
++
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/user.cfg b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/user.cfg
+new file mode 100644
+index 0000000..cef3ff8
+--- /dev/null
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx/user.cfg
+@@ -0,0 +1 @@
++CONFIG_COMMON_CLK_SI5338=y
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend
+index 836f326..c9c1f80 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-kernel/linux/linux-xlnx_%.bbappend
+@@ -1,2 +1,6 @@
+ FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+-SRC_URI += " file://si5338.patch"
++SRC_URI += " \
++ file://user.cfg \
++ file://si5338.patch \
++ file://0003-drm-xlnx_mixer-Dont-enable-primary-plane-by-default.patch \
++ file://0004-drm_atomic_helper-Supress-vblank-timeout-warning-mes.patch"
+-- 
+2.17.1
+

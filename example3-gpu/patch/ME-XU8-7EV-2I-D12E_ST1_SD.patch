@@ -1,0 +1,43 @@
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
+index 53c736f..6e64ca9 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
+@@ -1645,9 +1645,9 @@ CONFIG_run-postinsts=y
+ #
+ # libmali-xlnx 
+ #
+-# CONFIG_libmali-xlnx is not set
++CONFIG_libmali-xlnx=y
+ # CONFIG_libmali-xlnx-dbg is not set
+-# CONFIG_libmali-xlnx-dev is not set
++CONFIG_libmali-xlnx-dev=y
+ 
+ #
+ # libmetal 
+@@ -4053,7 +4053,7 @@ CONFIG_hellopm=y
+ #
+ # packagegroup-petalinux-display-debug 
+ #
+-# CONFIG_packagegroup-petalinux-display-debug is not set
++CONFIG_packagegroup-petalinux-display-debug=y
+ # CONFIG_packagegroup-petalinux-display-debug-dbg is not set
+ # CONFIG_packagegroup-petalinux-display-debug-dev is not set
+ 
+@@ -4137,7 +4137,7 @@ CONFIG_hellopm=y
+ #
+ # packagegroup-petalinux-qt 
+ #
+-# CONFIG_packagegroup-petalinux-qt is not set
++CONFIG_packagegroup-petalinux-qt=y
+ # CONFIG_packagegroup-petalinux-qt-dev is not set
+ # CONFIG_packagegroup-petalinux-qt-dbg is not set
+ # CONFIG_imageclass-populate-sdk-qt5 is not set
+@@ -4187,7 +4187,7 @@ CONFIG_hellopm=y
+ #
+ # packagegroup-petalinux-x11 
+ #
+-# CONFIG_packagegroup-petalinux-x11 is not set
++CONFIG_packagegroup-petalinux-x11=y
+ # CONFIG_packagegroup-petalinux-x11-dev is not set
+ # CONFIG_packagegroup-petalinux-x11-dbg is not set
+ 

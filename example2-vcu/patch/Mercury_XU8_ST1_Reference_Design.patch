@@ -1,0 +1,168 @@
+diff --git a/reference_design/scripts/Mercury_XU8_ST1_bd.tcl b/reference_design/scripts/Mercury_XU8_ST1_bd.tcl
+index 2e9fc0f..2c7b492 100644
+--- a/reference_design/scripts/Mercury_XU8_ST1_bd.tcl
++++ b/reference_design/scripts/Mercury_XU8_ST1_bd.tcl
+@@ -109,6 +109,7 @@ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_interconnect_0
+ set_property -dict [ list \
+   CONFIG.NUM_MI {1} \
+ ] [get_bd_cells axi_interconnect_0]
++
+ set_property -dict [ list \
+   CONFIG.PSU__USE__M_AXI_GP0 {1} \
+ ] [get_bd_cells zynq_ultra_ps_e]
+@@ -187,6 +188,116 @@ set Clk50 [ create_bd_port -dir O -type clk Clk50]
+ connect_bd_net [get_bd_ports Clk50] [get_bd_pins zynq_ultra_ps_e/pl_clk1]
+ set Rst_N [ create_bd_port -dir O -type rst Rst_N]
+ connect_bd_net [get_bd_ports Rst_N] [get_bd_pins zynq_ultra_ps_e/pl_resetn0]
++
++if { $Video_Codec == "VCU"} {
++  create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz clk_wiz_1
++  set_property -dict [ list \
++    CONFIG.CLKOUT1_JITTER {169.501} \
++    CONFIG.CLKOUT1_PHASE_ERROR {165.734} \
++    CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {33.33} \
++    CONFIG.CLKOUT2_JITTER {119.496} \
++    CONFIG.CLKOUT2_PHASE_ERROR {165.734} \
++    CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {333} \
++    CONFIG.CLKOUT2_USED {true} \
++    CONFIG.CLKOUT3_JITTER {215.924} \
++    CONFIG.CLKOUT3_PHASE_ERROR {235.769} \
++    CONFIG.CLKOUT3_USED {false} \
++    CONFIG.MMCM_CLKFBOUT_MULT_F {40.000} \
++    CONFIG.MMCM_CLKIN1_PERIOD {10.000} \
++    CONFIG.MMCM_CLKIN2_PERIOD {10.000} \
++    CONFIG.MMCM_CLKOUT0_DIVIDE_F {40.000} \
++    CONFIG.MMCM_CLKOUT1_DIVIDE {4} \
++    CONFIG.MMCM_CLKOUT2_DIVIDE {1} \
++    CONFIG.MMCM_DIVCLK_DIVIDE {3} \
++    CONFIG.NUM_OUT_CLKS {2} \
++    CONFIG.USE_LOCKED {true} \
++    CONFIG.USE_RESET {false} \
++  ] [get_bd_cells clk_wiz_1]
++
++  create_bd_cell -type ip -vlnv xilinx.com:ip:vcu vcu_0
++
++  create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0
++  set_property -dict [ list \
++    CONFIG.NUM_PORTS {1} \
++  ] [get_bd_cells xlconcat_0]
++
++  create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice xlslice_0
++  set_property -dict [ list \
++    CONFIG.DIN_FROM {0} \
++    CONFIG.DIN_TO {0} \
++    CONFIG.DIN_WIDTH {95} \
++  ] [get_bd_cells xlslice_0]
++
++  create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_1
++  set_property -dict [ \
++    list CONFIG.NUM_SI {5} \
++  ] [get_bd_cells smartconnect_1]
++
++  set_property -dict [ list \
++    CONFIG.PSU__USE__M_AXI_GP0 {1} \
++    CONFIG.PSU__USE__S_AXI_GP0 {1} \
++    CONFIG.PSU__USE__S_AXI_GP2 {1} \
++    CONFIG.PSU__USE__IRQ0 {1} \
++    CONFIG.PSU__GPIO_EMIO_WIDTH {95} \
++    CONFIG.PSU__GPIO_EMIO__PERIPHERAL__ENABLE {1} \
++    CONFIG.PSU__GPIO_EMIO__PERIPHERAL__IO {95} \
++  ] [get_bd_cells zynq_ultra_ps_e]
++
++  set_property -dict [ list \
++    CONFIG.NUM_MI {2} \
++  ] [get_bd_cells axi_interconnect_0]
++  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins vcu_0/S_AXI_LITE]
++  connect_bd_net [get_bd_pins zynq_ultra_ps_e/pl_clk0] [get_bd_pins axi_interconnect_0/M01_ACLK]
++  connect_bd_net [get_bd_pins ps_sys_rst/interconnect_aresetn] [get_bd_pins axi_interconnect_0/M01_ARESETN]
++
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_ENC0] [get_bd_intf_pins smartconnect_1/S00_AXI]
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_ENC1] [get_bd_intf_pins smartconnect_1/S01_AXI]
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_DEC0] [get_bd_intf_pins smartconnect_1/S02_AXI]
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_DEC1] [get_bd_intf_pins smartconnect_1/S03_AXI]
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_MCU] [get_bd_intf_pins smartconnect_1/S04_AXI]
++  connect_bd_net [get_bd_pins smartconnect_1/aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_intf_net [get_bd_intf_pins smartconnect_1/M00_AXI] [get_bd_intf_pins zynq_ultra_ps_e/S_AXI_HPC0_FPD]
++  
++  connect_bd_net -net xlslice_0_Dout [get_bd_pins vcu_0/vcu_resetn] [get_bd_pins xlslice_0/Dout]
++  connect_bd_net -net zynq_ultra_ps_e_emio_gpio_o [get_bd_pins xlslice_0/Din] [get_bd_pins zynq_ultra_ps_e/emio_gpio_o]
++  connect_bd_net [get_bd_pins vcu_0/pll_ref_clk] [get_bd_pins clk_wiz_1/clk_out1]
++  connect_bd_net [get_bd_pins vcu_0/m_axi_mcu_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins vcu_0/m_axi_enc_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins vcu_0/m_axi_dec_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins clk_wiz_1/clk_in1] [get_bd_pins zynq_ultra_ps_e/pl_clk0]
++  create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 vcu_sys_rst
++  connect_bd_net [get_bd_pins vcu_sys_rst/slowest_sync_clk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins vcu_sys_rst/dcm_locked] [get_bd_pins clk_wiz_1/locked]
++  connect_bd_net [get_bd_pins vcu_sys_rst/ext_reset_in] [get_bd_pins zynq_ultra_ps_e/pl_resetn0]
++  connect_bd_net [get_bd_pins vcu_0/s_axi_lite_aclk] [get_bd_pins zynq_ultra_ps_e/pl_clk0]
++
++  connect_bd_net [get_bd_pins zynq_ultra_ps_e/saxihp0_fpd_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins zynq_ultra_ps_e/saxihpc0_fpd_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins vcu_0/vcu_host_interrupt] [get_bd_pins xlconcat_0/In0]
++  connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins zynq_ultra_ps_e/pl_ps_irq0]
++  connect_bd_net [get_bd_pins smartconnect_1/aresetn] [get_bd_pins vcu_sys_rst/peripheral_aresetn]
++
++  # VCU hierarchy
++  group_bd_cells vcu_ss \
++    [get_bd_cells clk_wiz_1] \
++    [get_bd_cells xlslice_0] \
++    [get_bd_cells smartconnect_1] \
++    [get_bd_cells vcu_0] \
++    [get_bd_cells vcu_sys_rst] regenerate_bd_layout
++}
++
++
++# PS hierarchy
++group_bd_cells mpsoc_ss \
++  [get_bd_cells smartconnect_0] \
++  [get_bd_cells xlconcat_0] \
++  [get_bd_cells ddr4_sys_rst] \
++  [get_bd_cells system_management_wiz] \
++  [get_bd_cells ps_sys_rst] \
++  [get_bd_cells ddr4] \
++  [get_bd_cells zynq_ultra_ps_e] \
++  [get_bd_cells axi_interconnect_0]
++
+ assign_bd_address
+ save_bd_design
+ validate_bd_design
+diff --git a/reference_design/scripts/settings.tcl b/reference_design/scripts/settings.tcl
+index f22d5fe..609c564 100644
+--- a/reference_design/scripts/settings.tcl
++++ b/reference_design/scripts/settings.tcl
+@@ -28,7 +28,7 @@
+ 
+ # ----------------------------------------------------------------------------------
+ # Modify this variable to select your module
+-if {![info exists module_name]} {set module_name ME-XU8-4CG-1E-D11E}
++if {![info exists module_name]} {set module_name ME-XU8-7EV-2I-D12E}
+ if {![info exists baseboard]}   {set baseboard ST1}
+ # ----------------------------------------------------------------------------------
+ 
+@@ -46,21 +46,25 @@ switch $module_name {
+     set part xczu4cg-fbvb900-1-e 
+     set PS_DDR PS_D11E
+     set PL_DDR PL_1_D11E
++    set Video_Codec None
+   }
+   ME-XU8-5EV-1I-D12E {
+     set part xczu5ev-fbvb900-1-e 
+     set PS_DDR PS_D12E
+     set PL_DDR PL_2_D12E
++    set Video_Codec VCU
+   }
+   ME-XU8-7EV-1E-D11E {
+     set part xczu7ev-fbvb900-1-e 
+     set PS_DDR PS_D11E
+     set PL_DDR PL_1_D11E
++    set Video_Codec VCU
+   }
+   ME-XU8-7EV-2I-D12E {
+     set part xczu7ev-fbvb900-2-i 
+     set PS_DDR PS_D12E
+     set PL_DDR PL_2_D12E
++    set Video_Codec VCU
+   }
+   default {
+     puts "$module_name not available"

@@ -1,0 +1,565 @@
+diff --git a/reference_design/scripts/Mercury_XU8_ST1_bd.tcl b/reference_design/scripts/Mercury_XU8_ST1_bd.tcl
+index 2e9fc0f..fde275e 100644
+--- a/reference_design/scripts/Mercury_XU8_ST1_bd.tcl
++++ b/reference_design/scripts/Mercury_XU8_ST1_bd.tcl
+@@ -187,6 +187,369 @@ set Clk50 [ create_bd_port -dir O -type clk Clk50]
+ connect_bd_net [get_bd_ports Clk50] [get_bd_pins zynq_ultra_ps_e/pl_clk1]
+ set Rst_N [ create_bd_port -dir O -type rst Rst_N]
+ connect_bd_net [get_bd_ports Rst_N] [get_bd_pins zynq_ultra_ps_e/pl_resetn0]
++
++if { $Video_Codec == "VCU"} {
++  create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz clk_wiz_1
++  set_property -dict [ list \
++    CONFIG.CLKOUT1_JITTER {169.501} \
++    CONFIG.CLKOUT1_PHASE_ERROR {165.734} \
++    CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {33.33} \
++    CONFIG.CLKOUT2_JITTER {119.496} \
++    CONFIG.CLKOUT2_PHASE_ERROR {165.734} \
++    CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {333} \
++    CONFIG.CLKOUT2_USED {true} \
++    CONFIG.CLKOUT3_JITTER {215.924} \
++    CONFIG.CLKOUT3_PHASE_ERROR {235.769} \
++    CONFIG.CLKOUT3_USED {false} \
++    CONFIG.MMCM_CLKFBOUT_MULT_F {40.000} \
++    CONFIG.MMCM_CLKIN1_PERIOD {10.000} \
++    CONFIG.MMCM_CLKIN2_PERIOD {10.000} \
++    CONFIG.MMCM_CLKOUT0_DIVIDE_F {40.000} \
++    CONFIG.MMCM_CLKOUT1_DIVIDE {4} \
++    CONFIG.MMCM_CLKOUT2_DIVIDE {1} \
++    CONFIG.MMCM_DIVCLK_DIVIDE {3} \
++    CONFIG.NUM_OUT_CLKS {2} \
++    CONFIG.USE_LOCKED {true} \
++    CONFIG.USE_RESET {false} \
++  ] [get_bd_cells clk_wiz_1]
++
++  create_bd_cell -type ip -vlnv xilinx.com:ip:vcu vcu_0
++
++  create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0
++  set_property -dict [ list \
++    CONFIG.NUM_PORTS {1} \
++  ] [get_bd_cells xlconcat_0]
++
++  create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice xlslice_0
++  set_property -dict [ list \
++    CONFIG.DIN_FROM {0} \
++    CONFIG.DIN_TO {0} \
++    CONFIG.DIN_WIDTH {95} \
++  ] [get_bd_cells xlslice_0]
++
++  create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_1
++  set_property -dict [ \
++    list CONFIG.NUM_SI {5} \
++  ] [get_bd_cells smartconnect_1]
++
++  set_property -dict [ list \
++    CONFIG.PSU__USE__M_AXI_GP0 {1} \
++    CONFIG.PSU__USE__S_AXI_GP0 {1} \
++    CONFIG.PSU__USE__S_AXI_GP2 {1} \
++    CONFIG.PSU__USE__IRQ0 {1} \
++    CONFIG.PSU__GPIO_EMIO_WIDTH {95} \
++    CONFIG.PSU__GPIO_EMIO__PERIPHERAL__ENABLE {1} \
++    CONFIG.PSU__GPIO_EMIO__PERIPHERAL__IO {95} \
++  ] [get_bd_cells zynq_ultra_ps_e]
++
++  set_property -dict [ list \
++    CONFIG.NUM_MI {2} \
++  ] [get_bd_cells axi_interconnect_0]
++  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins vcu_0/S_AXI_LITE]
++  connect_bd_net [get_bd_pins zynq_ultra_ps_e/pl_clk0] [get_bd_pins axi_interconnect_0/M01_ACLK]
++  connect_bd_net [get_bd_pins ps_sys_rst/interconnect_aresetn] [get_bd_pins axi_interconnect_0/M01_ARESETN]
++
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_ENC0] [get_bd_intf_pins smartconnect_1/S00_AXI]
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_ENC1] [get_bd_intf_pins smartconnect_1/S01_AXI]
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_DEC0] [get_bd_intf_pins smartconnect_1/S02_AXI]
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_DEC1] [get_bd_intf_pins smartconnect_1/S03_AXI]
++  connect_bd_intf_net [get_bd_intf_pins vcu_0/M_AXI_MCU] [get_bd_intf_pins smartconnect_1/S04_AXI]
++  connect_bd_net [get_bd_pins smartconnect_1/aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_intf_net [get_bd_intf_pins smartconnect_1/M00_AXI] [get_bd_intf_pins zynq_ultra_ps_e/S_AXI_HPC0_FPD]
++
++  connect_bd_net -net xlslice_0_Dout [get_bd_pins vcu_0/vcu_resetn] [get_bd_pins xlslice_0/Dout]
++  connect_bd_net -net zynq_ultra_ps_e_emio_gpio_o [get_bd_pins xlslice_0/Din] [get_bd_pins zynq_ultra_ps_e/emio_gpio_o]
++  connect_bd_net [get_bd_pins vcu_0/pll_ref_clk] [get_bd_pins clk_wiz_1/clk_out1]
++  connect_bd_net [get_bd_pins vcu_0/m_axi_mcu_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins vcu_0/m_axi_enc_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins vcu_0/m_axi_dec_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins clk_wiz_1/clk_in1] [get_bd_pins zynq_ultra_ps_e/pl_clk0]
++  create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 vcu_sys_rst
++  connect_bd_net [get_bd_pins vcu_sys_rst/slowest_sync_clk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins vcu_sys_rst/dcm_locked] [get_bd_pins clk_wiz_1/locked]
++  connect_bd_net [get_bd_pins vcu_sys_rst/ext_reset_in] [get_bd_pins zynq_ultra_ps_e/pl_resetn0]
++  connect_bd_net [get_bd_pins vcu_0/s_axi_lite_aclk] [get_bd_pins zynq_ultra_ps_e/pl_clk0]
++
++  connect_bd_net [get_bd_pins zynq_ultra_ps_e/saxihp0_fpd_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins zynq_ultra_ps_e/saxihpc0_fpd_aclk] [get_bd_pins clk_wiz_1/clk_out2]
++  connect_bd_net [get_bd_pins vcu_0/vcu_host_interrupt] [get_bd_pins xlconcat_0/In0]
++  connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins zynq_ultra_ps_e/pl_ps_irq0]
++  connect_bd_net [get_bd_pins smartconnect_1/aresetn] [get_bd_pins vcu_sys_rst/peripheral_aresetn]
++
++  # VCU hierarchy
++  group_bd_cells vcu_ss \
++    [get_bd_cells clk_wiz_1] \
++    [get_bd_cells xlslice_0] \
++    [get_bd_cells smartconnect_1] \
++    [get_bd_cells vcu_0] \
++    [get_bd_cells vcu_sys_rst] regenerate_bd_layout
++}
++
++# Create the mipi hierarchy
++if { $Camera_Interface  == "MIPI"} {
++  # Hierarchical cell: mipi_ss
++  proc create_hier_cell_mipi_ss { parentCell nameHier } {
++
++    set Data_width 8
++
++    # Get object for parentCell
++    set parentObj [get_bd_cells $parentCell]
++
++    # Save current instance; Restore later
++    set oldCurInst [current_bd_instance .]
++
++    # Set parent object as current
++    current_bd_instance $parentObj
++
++    # Create cell and set as current instance
++    set hier_obj [create_bd_cell -type hier $nameHier]
++    current_bd_instance $hier_obj
++
++    # Create interface pins
++    create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI
++    create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi_mm_video
++    create_bd_intf_pin -mode Slave -vlnv xilinx.com:interface:mipi_phy_rtl:1.0 mipi_phy_if_0
++
++    # Create pins
++    create_bd_pin -dir I -from 94 -to 0 Din
++    create_bd_pin -dir O -type clk clk_200M
++    create_bd_pin -dir I -type clk clk_in
++    create_bd_pin -dir O -type intr csi2_interrupt
++    create_bd_pin -dir O -type intr demosaic_interrupt
++    create_bd_pin -dir I -type rst ext_reset_in
++    create_bd_pin -dir O -type intr frmbuf_wr_interrupt
++    create_bd_pin -dir O -type intr gamma_interrupt
++
++    # Create instance: axi_interconnect_0, and set properties
++    set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect axi_interconnect_0 ]
++    set_property -dict [ list \
++     CONFIG.NUM_MI {5} \
++   ] $axi_interconnect_0
++
++    # Create instance: clk_wiz_0, and set properties
++    set clk_wiz_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz clk_wiz_0 ]
++    set_property -dict [ list \
++     CONFIG.CLKOUT1_JITTER {102.087} \
++     CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {200.000} \
++     CONFIG.MMCM_CLKOUT0_DIVIDE_F {6.000} \
++     CONFIG.USE_RESET {false} \
++   ] $clk_wiz_0
++
++    # Create instance: gpio_1_1, and set properties
++    set gpio_1_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice gpio_1_1 ]
++    set_property -dict [ list \
++     CONFIG.DIN_FROM {1} \
++     CONFIG.DIN_TO {1} \
++     CONFIG.DIN_WIDTH {95} \
++     CONFIG.DOUT_WIDTH {1} \
++   ] $gpio_1_1
++
++    # Create instance: gpio_2_2, and set properties
++    set gpio_2_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice gpio_2_2 ]
++    set_property -dict [ list \
++     CONFIG.DIN_FROM {2} \
++     CONFIG.DIN_TO {2} \
++     CONFIG.DIN_WIDTH {95} \
++     CONFIG.DOUT_WIDTH {1} \
++   ] $gpio_2_2
++
++    # Create instance: gpio_3_3, and set properties
++    set gpio_3_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice gpio_3_3 ]
++    set_property -dict [ list \
++     CONFIG.DIN_FROM {3} \
++     CONFIG.DIN_TO {3} \
++     CONFIG.DIN_WIDTH {95} \
++     CONFIG.DOUT_WIDTH {1} \
++   ] $gpio_3_3
++
++    # Create instance: gpio_4_4, and set properties
++    set gpio_4_4 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice gpio_4_4 ]
++    set_property -dict [ list \
++     CONFIG.DIN_FROM {4} \
++     CONFIG.DIN_TO {4} \
++     CONFIG.DIN_WIDTH {95} \
++     CONFIG.DOUT_WIDTH {1} \
++   ] $gpio_4_4
++
++    # Create instance: mipi_csi2_rx_subsyst_0, and set properties
++    set mipi_csi2_rx_subsyst_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:mipi_csi2_rx_subsystem mipi_csi2_rx_subsyst_0 ]
++    set_property -dict [ list \
++     CONFIG.CLK_LANE_IO_LOC {AH12} \
++     CONFIG.CLK_LANE_IO_LOC_NAME {IO_L1P_T0L_N0_DBC_65} \
++     CONFIG.CMN_NUM_LANES {2} \
++     CONFIG.C_CSI_FILTER_USERDATATYPE {true} \
++     CONFIG.C_DPHY_LANES {2} \
++     CONFIG.DATA_LANE0_IO_LOC {AF12} \
++     CONFIG.DATA_LANE0_IO_LOC_NAME {IO_L2P_T0L_N2_65} \
++     CONFIG.DATA_LANE1_IO_LOC {AG11} \
++     CONFIG.DATA_LANE1_IO_LOC_NAME {IO_L3P_T0L_N4_AD15P_65} \
++     CONFIG.DPY_EN_REG_IF {false} \
++     CONFIG.HP_IO_BANK_SELECTION {65} \
++     CONFIG.SupportLevel {1} \
++   ] $mipi_csi2_rx_subsyst_0
++
++    # Create instance: proc_sys_reset_0, and set properties
++    set proc_sys_reset_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset proc_sys_reset_0 ]
++
++    # Create instance: v_demosaic_0, and set properties
++    set v_demosaic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_demosaic v_demosaic_0 ]
++    set_property -dict [ list \
++     CONFIG.ALGORITHM {1} \
++     CONFIG.ENABLE_ZIPPER_REMOVAL {true} \
++     CONFIG.MAX_COLS {1920} \
++     CONFIG.MAX_ROWS {1080} \
++     CONFIG.USE_URAM {1} \
++   ] $v_demosaic_0
++
++    # Create instance: v_frmbuf_wr_0, and set properties
++    set v_frmbuf_wr_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_frmbuf_wr v_frmbuf_wr_0 ]
++    set_property -dict [ list \
++     CONFIG.AXIMM_DATA_WIDTH {64} \
++     CONFIG.C_M_AXI_MM_VIDEO_DATA_WIDTH {64} \
++     CONFIG.HAS_BGR8 {1} \
++     CONFIG.HAS_BGRX8 {1} \
++     CONFIG.HAS_RGBX8 {1} \
++     CONFIG.HAS_UYVY8 {1} \
++     CONFIG.HAS_Y8 {1} \
++     CONFIG.HAS_YUV8 {1} \
++     CONFIG.HAS_YUVX8 {1} \
++     CONFIG.HAS_YUYV8 {1} \
++     CONFIG.HAS_Y_UV8 {1} \
++     CONFIG.MAX_DATA_WIDTH {10} \
++     CONFIG.HAS_RGBX10 {1} \
++     CONFIG.HAS_YUVX10 {1} \
++     CONFIG.HAS_Y_UV10 {1} \
++     CONFIG.HAS_Y_UV10_420 {1} \
++     CONFIG.HAS_Y10 {1} \
++     CONFIG.HAS_Y_UV8_420 {1} \
++     CONFIG.MAX_COLS {1920} \
++     CONFIG.MAX_DATA_WIDTH {10} \
++     CONFIG.MAX_NR_PLANES {2} \
++     CONFIG.MAX_ROWS {1080} \
++     CONFIG.SAMPLES_PER_CLOCK {1} \
++   ] $v_frmbuf_wr_0
++
++    # Create instance: v_gamma_lut_0, and set properties
++    set v_gamma_lut_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_gamma_lut v_gamma_lut_0 ]
++    set_property -dict [ list \
++     CONFIG.MAX_COLS {1920} \
++     CONFIG.MAX_ROWS {1080} \
++   ] $v_gamma_lut_0
++
++    # Create instance: v_proc_ss_0, and set properties
++    set v_proc_ss_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:v_proc_ss v_proc_ss_0 ]
++    set_property -dict [ list \
++     CONFIG.C_COLORSPACE_SUPPORT {0} \
++     CONFIG.C_CSC_ENABLE_WINDOW {false} \
++     CONFIG.C_ENABLE_CSC {true} \
++     CONFIG.C_MAX_COLS {1920} \
++     CONFIG.C_MAX_ROWS {1080} \
++     CONFIG.C_SAMPLES_PER_CLK {1} \
++     CONFIG.C_TOPOLOGY {3} \
++   ] $v_proc_ss_0
++    if { $Data_width  == "10"} {
++      set_property CONFIG.CMN_PXL_FORMAT {RAW10} [get_bd_cells $mipi_csi2_rx_subsyst_0]
++      set_property CONFIG.MAX_DATA_WIDTH {10} [get_bd_cells $v_demosaic_0]
++      set_property CONFIG.MAX_DATA_WIDTH {10} [get_bd_cells $v_frmbuf_wr_0]
++      set_property CONFIG.MAX_DATA_WIDTH {10} [get_bd_cells $v_gamma_lut_0]
++      set_property CONFIG.C_MAX_DATA_WIDTH {10} [get_bd_cells $v_proc_ss_0]
++    } else {
++      set_property CONFIG.CMN_PXL_FORMAT {RAW8} [get_bd_cells $mipi_csi2_rx_subsyst_0]
++      set_property CONFIG.MAX_DATA_WIDTH {8} [get_bd_cells $v_demosaic_0]
++      set_property CONFIG.MAX_DATA_WIDTH {8} [get_bd_cells $v_frmbuf_wr_0]
++      set_property CONFIG.MAX_DATA_WIDTH {8} [get_bd_cells $v_gamma_lut_0]
++      set_property CONFIG.C_MAX_DATA_WIDTH {8} [get_bd_cells $v_proc_ss_0]
++    }
++
++    # Create interface connections
++    connect_bd_intf_net -intf_net Conn1 [get_bd_intf_pins mipi_phy_if_0] [get_bd_intf_pins mipi_csi2_rx_subsyst_0/mipi_phy_if]
++    connect_bd_intf_net -intf_net Conn2 [get_bd_intf_pins m_axi_mm_video] [get_bd_intf_pins v_frmbuf_wr_0/m_axi_mm_video]
++    connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_pins S_AXI] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
++    connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins axi_interconnect_0/M00_AXI] [get_bd_intf_pins mipi_csi2_rx_subsyst_0/csirxss_s_axi]
++    connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins axi_interconnect_0/M01_AXI] [get_bd_intf_pins v_frmbuf_wr_0/s_axi_CTRL]
++    connect_bd_intf_net -intf_net axi_interconnect_0_M02_AXI [get_bd_intf_pins axi_interconnect_0/M02_AXI] [get_bd_intf_pins v_demosaic_0/s_axi_CTRL]
++    connect_bd_intf_net -intf_net axi_interconnect_0_M03_AXI [get_bd_intf_pins axi_interconnect_0/M03_AXI] [get_bd_intf_pins v_proc_ss_0/s_axi_ctrl]
++    connect_bd_intf_net -intf_net axi_interconnect_0_M04_AXI [get_bd_intf_pins axi_interconnect_0/M04_AXI] [get_bd_intf_pins v_gamma_lut_0/s_axi_CTRL]
++    connect_bd_intf_net -intf_net mipi_csi2_rx_subsyst_0_video_out [get_bd_intf_pins mipi_csi2_rx_subsyst_0/video_out] [get_bd_intf_pins v_demosaic_0/s_axis_video]
++    connect_bd_intf_net -intf_net v_demosaic_0_m_axis_video [get_bd_intf_pins v_demosaic_0/m_axis_video] [get_bd_intf_pins v_gamma_lut_0/s_axis_video]
++    connect_bd_intf_net -intf_net v_gamma_lut_0_m_axis_video [get_bd_intf_pins v_gamma_lut_0/m_axis_video] [get_bd_intf_pins v_proc_ss_0/s_axis]
++    connect_bd_intf_net -intf_net v_proc_ss_0_m_axis [get_bd_intf_pins v_frmbuf_wr_0/s_axis_video] [get_bd_intf_pins v_proc_ss_0/m_axis]
++
++    # Create port connections
++    connect_bd_net -net Din_1 [get_bd_pins Din] [get_bd_pins gpio_1_1/Din] [get_bd_pins gpio_2_2/Din] [get_bd_pins gpio_3_3/Din] [get_bd_pins gpio_4_4/Din]
++    connect_bd_net -net clk_in1_1 [get_bd_pins clk_in] [get_bd_pins clk_wiz_0/clk_in1]
++    connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins clk_200M] [get_bd_pins axi_interconnect_0/ACLK] [get_bd_pins axi_interconnect_0/M00_ACLK] [get_bd_pins axi_interconnect_0/M01_ACLK] [get_bd_pins axi_interconnect_0/M02_ACLK] [get_bd_pins axi_interconnect_0/M03_ACLK] [get_bd_pins axi_interconnect_0/M04_ACLK] [get_bd_pins axi_interconnect_0/S00_ACLK] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins mipi_csi2_rx_subsyst_0/dphy_clk_200M] [get_bd_pins mipi_csi2_rx_subsyst_0/lite_aclk] [get_bd_pins mipi_csi2_rx_subsyst_0/video_aclk] [get_bd_pins proc_sys_reset_0/slowest_sync_clk] [get_bd_pins v_demosaic_0/ap_clk] [get_bd_pins v_frmbuf_wr_0/ap_clk] [get_bd_pins v_gamma_lut_0/ap_clk] [get_bd_pins v_proc_ss_0/aclk]
++    connect_bd_net -net clk_wiz_0_locked [get_bd_pins clk_wiz_0/locked] [get_bd_pins proc_sys_reset_0/dcm_locked]
++    connect_bd_net -net ext_reset_in_1 [get_bd_pins ext_reset_in] [get_bd_pins proc_sys_reset_0/ext_reset_in]
++    connect_bd_net -net gpio_42_42_Dout [get_bd_pins gpio_1_1/Dout] [get_bd_pins v_demosaic_0/ap_rst_n]
++    connect_bd_net -net gpio_43_43_Dout [get_bd_pins gpio_3_3/Dout] [get_bd_pins v_proc_ss_0/aresetn]
++    connect_bd_net -net gpio_44_44_Dout [get_bd_pins gpio_2_2/Dout] [get_bd_pins v_frmbuf_wr_0/ap_rst_n]
++    connect_bd_net -net gpio_4_4_Dout [get_bd_pins gpio_4_4/Dout] [get_bd_pins v_gamma_lut_0/ap_rst_n]
++    connect_bd_net -net mipi_csi2_rx_subsyst_0_interrupt [get_bd_pins csi2_interrupt] [get_bd_pins mipi_csi2_rx_subsyst_0/csirxss_csi_irq]
++    connect_bd_net -net proc_sys_reset_0_interconnect_aresetn [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins proc_sys_reset_0/interconnect_aresetn]
++    connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins axi_interconnect_0/M01_ARESETN] [get_bd_pins axi_interconnect_0/M02_ARESETN] [get_bd_pins axi_interconnect_0/M03_ARESETN] [get_bd_pins axi_interconnect_0/M04_ARESETN] [get_bd_pins axi_interconnect_0/S00_ARESETN] [get_bd_pins mipi_csi2_rx_subsyst_0/lite_aresetn] [get_bd_pins mipi_csi2_rx_subsyst_0/video_aresetn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn]
++    connect_bd_net -net v_demosaic_0_interrupt [get_bd_pins demosaic_interrupt] [get_bd_pins v_demosaic_0/interrupt]
++    connect_bd_net -net v_frmbuf_wr_0_interrupt [get_bd_pins frmbuf_wr_interrupt] [get_bd_pins v_frmbuf_wr_0/interrupt]
++    connect_bd_net -net v_gamma_lut_0_interrupt [get_bd_pins gamma_interrupt] [get_bd_pins v_gamma_lut_0/interrupt]
++
++    # Restore current instance
++    current_bd_instance $oldCurInst
++  }
++
++  # Create instance: mipi_ss
++  create_hier_cell_mipi_ss [current_bd_instance .] mipi_ss
++}
++
++# Connect everything
++if { $Camera_Interface  == "MIPI"} {
++  set_property -dict [list \
++    CONFIG.PSU__I2C1__PERIPHERAL__ENABLE {1} \
++    CONFIG.PSU__I2C1__PERIPHERAL__IO {EMIO} \
++    CONFIG.PSU__USE__M_AXI_GP1 {1} \
++    CONFIG.PSU__USE__S_AXI_GP1 {1} \
++    CONFIG.PSU__SAXIGP1__DATA_WIDTH {64} \
++  ] [get_bd_cells zynq_ultra_ps_e]
++
++  set_property -dict [list CONFIG.NUM_PORTS {5}] [get_bd_cells xlconcat_0]
++  make_bd_intf_pins_external  [get_bd_intf_pins mipi_ss/mipi_phy_if_0]
++  set_property name mipi_phy_if_0 [get_bd_intf_ports mipi_phy_if_0_0]
++  make_bd_intf_pins_external  [get_bd_intf_pins zynq_ultra_ps_e/IIC_1]
++  set_property name IIC1_MIPI [get_bd_intf_ports IIC_1_0]
++
++  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins mipi_ss/S_AXI] [get_bd_intf_pins zynq_ultra_ps_e/M_AXI_HPM1_FPD]
++  connect_bd_intf_net -boundary_type upper [get_bd_intf_pins mipi_ss/m_axi_mm_video] [get_bd_intf_pins zynq_ultra_ps_e/S_AXI_HPC1_FPD]
++  connect_bd_net [get_bd_pins mipi_ss/clk_200M] [get_bd_pins zynq_ultra_ps_e/maxihpm1_fpd_aclk]
++  connect_bd_net [get_bd_pins mipi_ss/clk_200M] [get_bd_pins zynq_ultra_ps_e/saxihpc1_fpd_aclk]
++  connect_bd_net [get_bd_pins mipi_ss/csi2_interrupt] [get_bd_pins xlconcat_0/In1]
++  connect_bd_net [get_bd_pins mipi_ss/demosaic_interrupt] [get_bd_pins xlconcat_0/In2]
++  connect_bd_net [get_bd_pins mipi_ss/frmbuf_wr_interrupt] [get_bd_pins xlconcat_0/In3]
++  connect_bd_net [get_bd_pins mipi_ss/gamma_interrupt] [get_bd_pins xlconcat_0/In4]
++  connect_bd_net [get_bd_pins zynq_ultra_ps_e/emio_gpio_o] [get_bd_pins mipi_ss/Din]
++  connect_bd_net [get_bd_pins zynq_ultra_ps_e/pl_clk0] [get_bd_pins mipi_ss/clk_in]
++  connect_bd_net [get_bd_pins zynq_ultra_ps_e/pl_resetn0] [get_bd_pins mipi_ss/ext_reset_in]
++}
++
++# PS hierarchy
++group_bd_cells mpsoc_ss \
++  [get_bd_cells smartconnect_0] \
++  [get_bd_cells xlconcat_0] \
++  [get_bd_cells ddr4_sys_rst] \
++  [get_bd_cells system_management_wiz] \
++  [get_bd_cells ps_sys_rst] \
++  [get_bd_cells ddr4] \
++  [get_bd_cells zynq_ultra_ps_e] \
++  [get_bd_cells axi_interconnect_0]
++
++
++# Fix, only for the AppNote ...
++if { $Camera_Interface  == "MIPI"} {
++  assign_bd_address -offset 0xB0000000 -range 0x00002000 -target_address_space [get_bd_addr_spaces mpsoc_ss/zynq_ultra_ps_e/Data] [get_bd_addr_segs mipi_ss/mipi_csi2_rx_subsyst_0/csirxss_s_axi/Reg] -force
++  assign_bd_address -offset 0xB0020000 -range 0x00010000 -target_address_space [get_bd_addr_spaces mpsoc_ss/zynq_ultra_ps_e/Data] [get_bd_addr_segs mipi_ss/v_demosaic_0/s_axi_CTRL/Reg] -force
++  assign_bd_address -offset 0xB0030000 -range 0x00010000 -target_address_space [get_bd_addr_spaces mpsoc_ss/zynq_ultra_ps_e/Data] [get_bd_addr_segs mipi_ss/v_frmbuf_wr_0/s_axi_CTRL/Reg] -force
++  assign_bd_address -offset 0xB0040000 -range 0x00010000 -target_address_space [get_bd_addr_spaces mpsoc_ss/zynq_ultra_ps_e/Data] [get_bd_addr_segs mipi_ss/v_gamma_lut_0/s_axi_CTRL/Reg] -force
++  assign_bd_address -offset 0xB0010000 -range 0x00010000 -target_address_space [get_bd_addr_spaces mpsoc_ss/zynq_ultra_ps_e/Data] [get_bd_addr_segs mipi_ss/v_proc_ss_0/s_axi_ctrl/Reg] -force
++}
++
+ assign_bd_address
+ save_bd_design
+ validate_bd_design
+diff --git a/reference_design/scripts/settings.tcl b/reference_design/scripts/settings.tcl
+index f22d5fe..0916340 100644
+--- a/reference_design/scripts/settings.tcl
++++ b/reference_design/scripts/settings.tcl
+@@ -28,7 +28,7 @@
+ 
+ # ----------------------------------------------------------------------------------
+ # Modify this variable to select your module
+-if {![info exists module_name]} {set module_name ME-XU8-4CG-1E-D11E}
++if {![info exists module_name]} {set module_name ME-XU8-7EV-2I-D12E}
+ if {![info exists baseboard]}   {set baseboard ST1}
+ # ----------------------------------------------------------------------------------
+ 
+@@ -46,21 +46,29 @@ switch $module_name {
+     set part xczu4cg-fbvb900-1-e 
+     set PS_DDR PS_D11E
+     set PL_DDR PL_1_D11E
++    set Video_Codec None
++    set Camera_Interface MIPI
+   }
+   ME-XU8-5EV-1I-D12E {
+     set part xczu5ev-fbvb900-1-e 
+     set PS_DDR PS_D12E
+     set PL_DDR PL_2_D12E
++    set Video_Codec VCU
++    set Camera_Interface MIPI
+   }
+   ME-XU8-7EV-1E-D11E {
+     set part xczu7ev-fbvb900-1-e 
+     set PS_DDR PS_D11E
+     set PL_DDR PL_1_D11E
++    set Video_Codec VCU
++    set Camera_Interface MIPI
+   }
+   ME-XU8-7EV-2I-D12E {
+     set part xczu7ev-fbvb900-2-i 
+     set PS_DDR PS_D12E
+     set PL_DDR PL_2_D12E
++    set Video_Codec VCU
++    set Camera_Interface MIPI
+   }
+   default {
+     puts "$module_name not available"
+diff --git a/reference_design/src/Mercury_XU8_ST1.tcl b/reference_design/src/Mercury_XU8_ST1.tcl
+index a6e8c00..f1510b8 100644
+--- a/reference_design/src/Mercury_XU8_ST1.tcl
++++ b/reference_design/src/Mercury_XU8_ST1.tcl
+@@ -144,15 +144,19 @@ set_property -dict {PACKAGE_PIN D15   IOSTANDARD LVCMOS18  } [get_ports {IO4_D7_
+ # LED
+ set_property -dict {PACKAGE_PIN AF13  IOSTANDARD LVCMOS12  } [get_ports {PL_LED2_N}]
+ 
++# MIPI0 IIC
++set_property -dict {PACKAGE_PIN K15 IOSTANDARD LVCMOS18} [get_ports {IIC1_MIPI_scl_io}]
++set_property -dict {PACKAGE_PIN K14 IOSTANDARD LVCMOS18} [get_ports {IIC1_MIPI_sda_io}]
++
+ # MIPI0
+-set_property -dict {PACKAGE_PIN AF11  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_D0_N}]
+-set_property -dict {PACKAGE_PIN AF12  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_D0_P}]
+-set_property -dict {PACKAGE_PIN AH11  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_D1_N}]
+-set_property -dict {PACKAGE_PIN AG11  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_D1_P}]
+-set_property -dict {PACKAGE_PIN AH8   IOSTANDARD LVCMOS12  } [get_ports {MIPI0_CLK_N}]
+-set_property -dict {PACKAGE_PIN AG8   IOSTANDARD LVCMOS12  } [get_ports {MIPI0_CLK_P}]
+-set_property -dict {PACKAGE_PIN AJ12  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_CLK_D0LP_N}]
+-set_property -dict {PACKAGE_PIN AH12  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_CLK_D0LP_P}]
++#set_property -dict {PACKAGE_PIN AF11  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_D0_N}]
++#set_property -dict {PACKAGE_PIN AF12  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_D0_P}]
++#set_property -dict {PACKAGE_PIN AH11  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_D1_N}]
++#set_property -dict {PACKAGE_PIN AG11  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_D1_P}]
++#set_property -dict {PACKAGE_PIN AH8   IOSTANDARD LVCMOS12  } [get_ports {MIPI0_CLK_N}]
++#set_property -dict {PACKAGE_PIN AG8   IOSTANDARD LVCMOS12  } [get_ports {MIPI0_CLK_P}]
++#set_property -dict {PACKAGE_PIN AJ12  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_CLK_D0LP_N}]
++#set_property -dict {PACKAGE_PIN AH12  IOSTANDARD LVCMOS12  } [get_ports {MIPI0_CLK_D0LP_P}]
+ 
+ # MIPI1
+ set_property -dict {PACKAGE_PIN AK10  IOSTANDARD LVCMOS12  } [get_ports {MIPI1_D0_N}]
+diff --git a/reference_design/src/Mercury_XU8_ST1.vhd b/reference_design/src/Mercury_XU8_ST1.vhd
+index a0440c5..7667fac 100644
+--- a/reference_design/src/Mercury_XU8_ST1.vhd
++++ b/reference_design/src/Mercury_XU8_ST1.vhd
+@@ -150,17 +150,21 @@ entity Mercury_XU8_ST1 is
+     IO4_D7_N                       : inout   std_logic;
+     
+     -- LED
+-    PL_LED2_N                      : out     std_logic;
++    PL_LED2_N                      : out   std_logic;
++
++    -- IIC1 MIPI0
++    IIC1_MIPI_scl_io               : inout   std_logic;
++    IIC1_MIPI_sda_io               : inout   std_logic;
+     
+     -- MIPI0
+-    MIPI0_D0_N                     : inout   std_logic;
+-    MIPI0_D0_P                     : inout   std_logic;
+-    MIPI0_D1_N                     : inout   std_logic;
+-    MIPI0_D1_P                     : inout   std_logic;
+-    MIPI0_CLK_N                    : inout   std_logic;
+-    MIPI0_CLK_P                    : inout   std_logic;
+-    MIPI0_CLK_D0LP_N               : inout   std_logic;
+-    MIPI0_CLK_D0LP_P               : inout   std_logic;
++    MIPI0_D0_N                     : in      std_logic;
++    MIPI0_D0_P                     : in      std_logic;
++    MIPI0_D1_N                     : in      std_logic;
++    MIPI0_D1_P                     : in      std_logic;
++    MIPI0_CLK_N                    : in      std_logic;
++    MIPI0_CLK_P                    : in      std_logic;
++    MIPI0_CLK_D0LP_N               : in      std_logic;
++    MIPI0_CLK_D0LP_P               : in      std_logic;
+     
+     -- MIPI1
+     MIPI1_D0_N                     : inout   std_logic;
+@@ -226,11 +230,30 @@ architecture rtl of Mercury_XU8_ST1 is
+       C0_DDR4_cs_n        : out    std_logic_vector(0 downto 0);
+       C0_DDR4_dm_n        : inout  std_logic_vector(3 downto 0);
+       C0_DDR4_dqs_c       : inout  std_logic_vector(3 downto 0);
+-      C0_DDR4_dqs_t       : inout  std_logic_vector(3 downto 0)
++      C0_DDR4_dqs_t       : inout  std_logic_vector(3 downto 0);
++      mipi_phy_if_0_clk_n  : in std_logic;
++      mipi_phy_if_0_clk_p  : in std_logic;
++      mipi_phy_if_0_data_n : in std_logic_vector(1 downto 0);
++      mipi_phy_if_0_data_p : in std_logic_vector(1 downto 0);
++      IIC1_MIPI_scl_i      : in std_logic;
++      IIC1_MIPI_scl_o      : out std_logic;
++      IIC1_MIPI_scl_t      : out std_logic;
++      IIC1_MIPI_sda_i      : in std_logic;
++      IIC1_MIPI_sda_o      : out std_logic;
++      IIC1_MIPI_sda_t      : out std_logic
+     );
+     
+   end component Mercury_XU8;
+ 
++  component IOBUF is
++  port (
++    I : in STD_LOGIC;
++    O : out STD_LOGIC;
++    T : in STD_LOGIC;
++    IO : inout STD_LOGIC
++  );
++  end component IOBUF;
++
+   ---------------------------------------------------------------------------------------------------
+   -- signal declarations
+   ---------------------------------------------------------------------------------------------------
+@@ -240,6 +263,12 @@ architecture rtl of Mercury_XU8_ST1 is
+   signal dp_aux_data_oe_n : std_logic;
+   signal LedCount         : unsigned(23 downto 0);
+ 
++  signal IIC1_MIPI_scl_i : std_logic;
++  signal IIC1_MIPI_scl_o : std_logic;
++  signal IIC1_MIPI_scl_t : std_logic;
++  signal IIC1_MIPI_sda_i : std_logic;
++  signal IIC1_MIPI_sda_o : std_logic;
++  signal IIC1_MIPI_sda_t : std_logic;
+ begin
+   
+   ---------------------------------------------------------------------------------------------------
+@@ -269,7 +298,34 @@ begin
+       C0_DDR4_cs_n         => DDR4PL_CS_N,
+       C0_DDR4_dm_n         => DDR4PL_DM,
+       C0_DDR4_dqs_c        => DDR4PL_DQS_N,
+-      C0_DDR4_dqs_t        => DDR4PL_DQS_P
++      C0_DDR4_dqs_t        => DDR4PL_DQS_P,
++      mipi_phy_if_0_data_n(0) => MIPI0_D0_N,
++      mipi_phy_if_0_data_n(1) => MIPI0_D1_N,
++      mipi_phy_if_0_data_p(0) => MIPI0_D0_P,
++      mipi_phy_if_0_data_p(1) => MIPI0_D1_P,
++      mipi_phy_if_0_clk_n     => MIPI0_CLK_D0LP_N,
++      mipi_phy_if_0_clk_p     => MIPI0_CLK_D0LP_P,
++      IIC1_MIPI_scl_i => IIC1_MIPI_scl_i,
++      IIC1_MIPI_scl_o => IIC1_MIPI_scl_o,
++      IIC1_MIPI_scl_t => IIC1_MIPI_scl_t,
++      IIC1_MIPI_sda_i => IIC1_MIPI_sda_i,
++      IIC1_MIPI_sda_o => IIC1_MIPI_sda_o,
++      IIC1_MIPI_sda_t => IIC1_MIPI_sda_t
++    );
++
++  IIC1_MIPI_scl_iobuf: component IOBUF
++     port map (
++      I => IIC1_MIPI_scl_o,
++      IO => IIC1_MIPI_scl_io,
++      O => IIC1_MIPI_scl_i,
++      T => IIC1_MIPI_scl_t
++    );
++  IIC1_MIPI_sda_iobuf: component IOBUF
++     port map (
++      I => IIC1_MIPI_sda_o,
++      IO => IIC1_MIPI_sda_io,
++      O => IIC1_MIPI_sda_i,
++      T => IIC1_MIPI_sda_t
+     );
+   
+   DP_AUX_OE <= not dp_aux_data_oe_n;

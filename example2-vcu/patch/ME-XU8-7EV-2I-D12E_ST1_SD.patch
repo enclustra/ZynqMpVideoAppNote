@@ -1,0 +1,22 @@
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
+index 53c736f..2798fff 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
+@@ -4060,7 +4060,7 @@ CONFIG_hellopm=y
+ #
+ # packagegroup-petalinux-gstreamer 
+ #
+-# CONFIG_packagegroup-petalinux-gstreamer is not set
++CONFIG_packagegroup-petalinux-gstreamer=y
+ # CONFIG_packagegroup-petalinux-gstreamer-dev is not set
+ # CONFIG_packagegroup-petalinux-gstreamer-dbg is not set
+ 
+@@ -4166,7 +4166,7 @@ CONFIG_hellopm=y
+ #
+ # packagegroup-petalinux-v4lutils 
+ #
+-# CONFIG_packagegroup-petalinux-v4lutils is not set
++CONFIG_packagegroup-petalinux-v4lutils=y
+ # CONFIG_packagegroup-petalinux-v4lutils-dbg is not set
+ # CONFIG_packagegroup-petalinux-v4lutils-dev is not set
+ 

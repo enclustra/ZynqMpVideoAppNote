@@ -1,0 +1,57 @@
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
+index 53c736f..ac32b08 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/configs/rootfs_config
+@@ -4053,7 +4053,7 @@ CONFIG_hellopm=y
+ #
+ # packagegroup-petalinux-display-debug 
+ #
+-# CONFIG_packagegroup-petalinux-display-debug is not set
++CONFIG_packagegroup-petalinux-display-debug=y
+ # CONFIG_packagegroup-petalinux-display-debug-dbg is not set
+ # CONFIG_packagegroup-petalinux-display-debug-dev is not set
+ 
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/device-tree.bbappend b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/device-tree.bbappend
+index 73e294c..f820f19 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/device-tree.bbappend
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/device-tree.bbappend
+@@ -4,6 +4,7 @@ SRC_URI += "file://system-user.dtsi"
+ SRC_URI += " file://zynqmp_enclustra_common.dtsi"
+ SRC_URI += " file://zynqmp_enclustra_mercury_xu8.dtsi"
+ SRC_URI += " file://zynqmp_enclustra_mercury_st1.dtsi"
++SRC_URI += " file://pl-custom.dtsi"
+ 
+ python () {
+     if d.getVar("CONFIG_DISABLE"):
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/pl-custom.dtsi b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/pl-custom.dtsi
+index 336d7a2..d24de16 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/pl-custom.dtsi
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/pl-custom.dtsi
+@@ -1,2 +1,18 @@
+ / {
+ };
++
++&zynqmp_dp_snd_pcm0 {
++    status = "okay";
++};
++
++&zynqmp_dp_snd_pcm1 {
++    status = "okay";
++};
++
++&zynqmp_dp_snd_card0 {
++    status = "okay";
++};
++
++&zynqmp_dp_snd_codec0 {
++    status = "okay";
++};
+diff --git a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
+index ddf11a6..e234985 100644
+--- a/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
++++ b/petalinux/ME-XU8-7EV-2I-D12E_ST1/sd/project-spec/meta-user/recipes-bsp/device-tree/files/system-user.dtsi
+@@ -5,3 +5,4 @@
+ #include "zynqmp_enclustra_common.dtsi"
+ #include "zynqmp_enclustra_mercury_st1.dtsi"
+ #include "zynqmp_enclustra_mercury_xu8.dtsi"
++#include "pl-custom.dtsi"
